@@ -1,0 +1,97 @@
+                                        Btrace环境搭建
+
+基础环境：
+---------------------------------------------------------------------------------------------------------------------------------------        
+---OS环境：
+             [root@app bin]# lsb_release -a
+             LSB Version:    :core-4.1-amd64:core-4.1-noarch
+             Distributor ID: CentOS
+             Description:    CentOS Linux release 7.3.1611 (Core) 
+             Release:        7.3.1611
+             Codename:       Core
+
+---JDK环境：
+             [root@app bin]# java -version
+             java version "1.8.0_172"
+             Java(TM) SE Runtime Environment (build 1.8.0_172-b11)
+             Java HotSpot(TM) 64-Bit Server VM (build 25.172-b11, mixed mode)
+
+---Btrace参数：
+             [root@app bin]# ./btrace --version
+             BTrace v.1.3.9 (20180720)
+        
+----------------------------------------------------------------------------------------------------------------------------------------
+1、下载地址
+   建议去https://github.com/btraceio/btrace/releases/tag/v1.3.9获取（当前环境获取的为btrace-1.3.9.tar.gz隶属源码包）
+
+2、安装配置
+
+   --前提条件：
+    （1）若下载的是源码包，则首先要进行build，成功后才能进行使用（判断是否为源码包方法：tar包解压后，看Readme或install文 
+         件，如果里面有让你make,make install，那就是源文件，则需要编译安装）
+    （2）若下载的是二进制包，则直接使用
+
+   --基本安装：
+      [root@app local]# tar zxvf btrace-1.3.9.tar.gz -C /usr/local/
+      [root@app btrace-1.3.9]# pwd
+      /usr/local/btrace-1.3.9
+
+   --build操作：
+      [root@app btrace-1.3.9]# ./gradlew build
+      Starting a Gradle Daemon (subsequent builds will be faster)
+      ... ...
+      [root@app btrace-1.3.9]# ./gradlew buildDistributions
+      ... ...
+      build完成后，btrace目录下出现build文件夹，里面显示相关的执行jar包，详细如下所示：
+      [root@app btrace-1.3.9]# cd build
+      [root@app build]# ls -l
+      total 1164
+      -rw-r--r--  1 root root 407521 Jul 20 08:59 btrace-agent.jar
+      -rw-r--r--  1 root root 340526 Jul 20 08:59 btrace-boot.jar
+      -rw-r--r--  1 root root 403721 Jul 20 08:59 btrace-client.jar
+      drwxr-xr-x  4 root root   4096 Jul 20 08:59 classes
+      drwxr-xr-x  2 root root   4096 Jul 20 08:58 dependency-cache
+      drwxr-xr-x  2 root root   4096 Jul 20 08:59 jacoco
+      drwxr-xr-x  2 root root   4096 Jul 20 08:59 libs
+      drwxr-xr-x  3 root root   4096 Jul 20 08:59 reports
+      drwxr-xr-x  3 root root   4096 Jul 20 08:59 test-results
+      drwxr-xr-x 10 root root   4096 Jul 20 08:59 tmp
+      drwxr-xr-x  2 root root   4096 Jul 20 08:48 x86_64
+
+   --环境变量设置：
+      [root@app build]# vi /etc/profile
+      #JDK ENV
+      export JAVA_HOME=/usr/local/jdk1.8.0_172
+      export CLASSPATH=.:${JAVA_HOME}/jre/lib/rt.jar:${JAVA_HOME}/lib/dt.jar:${JAVA_HOME}/lib/tools.jar
+      export PATH=$PATH:${JAVA_HOME}/bin
+
+      # BTrace ENV 
+      export BTRACE_HOME=/usr/local/btrace-1.3.9
+      export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH:$BTRACE_HOME/bin
+
+      [root@app build]# . /etc/profile 或[root@app build]# source /etc/profile 
+
+      [root@app btrace-1.3.9]# echo $JAVA_HOME
+      /usr/local/jdk1.8.0_172
+      [root@app btrace-1.3.9]# echo $BTRACE_HOME
+      /usr/local/btrace-1.3.9
+
+3、验证
+      [root@app bin]# ./btrace
+      Usage: btrace <options> <pid> <btrace source or .class file> <btrace arguments>
+      where possible options include:
+      --version             Show the version
+      -v                    Run in verbose mode
+      -o <file>             The path to store the probe output (will disable showing the output in console)
+    -u                    Run in trusted mode
+      -d <path>             Dump the instrumented classes to the specified path
+      -pd <path>            The search path for the probe XML descriptors
+      -classpath <path>     Specify where to find user class files and annotation processors
+      -cp <path>            Specify where to find user class files and annotation processors
+      -I <path>             Specify where to find include files
+      -p <port>             Specify port to which the btrace agent listens for clients
+      -statsd <host[:port]> Specify the statsd server, if any
+      至此，Btrace算是安装成功！
+    
+      TIPS：若源码安装不进行build的话，即使配置好环境变量，也会抛出：“Please set BTRACE_HOME before running this script”此类异常
+----------------------------------------------------------------------------------------------------------------------------------------
