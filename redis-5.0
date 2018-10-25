@@ -2,7 +2,7 @@
 
 ---环境描述：CentOS release 6.7 (Final)
 
----主机IP：10.1.22.12
+---主机IP：10.10.10.10（此处真实地址已xx）
 
 ---应用服务：redis-5.0.0 release版本
 
@@ -67,7 +67,7 @@
  
       [root@testserver src]# ./redis-server /usr/local/redis-5.0.0/redis.conf 
       [root@testserver src]# ps -ef|grep redis
-      root      9710     1  0 14:42 ?        00:00:00 ./redis-server 10.1.22.12:4444                  
+      root      9710     1  0 14:42 ?        00:00:00 ./redis-server 10.10.10.10:4444                  
       root      9715  5169  0 14:42 pts/1    00:00:00 grep redis
       [root@testserver src]# tail -f /usr/local/redis-5.0.0/redis.log 
 
@@ -119,37 +119,37 @@
       [root@testserver src]# redis-server ../redis4005.conf 
      
       [root@testserver src]# ps -ef|grep redis
-      root     23872     1  0 16:37 ?        00:00:02 redis-server 10.1.22.12:4444 [cluster]    
-      root     23877     1  0 16:37 ?        00:00:02 redis-server 10.1.22.12:4001 [cluster]    
-      root     23882     1  0 16:37 ?        00:00:02 redis-server 10.1.22.12:4002 [cluster]    
-      root     23941     1  0 16:44 ?        00:00:01 redis-server 10.1.22.12:4003 [cluster]    
-      root     23946     1  0 16:44 ?        00:00:01 redis-server 10.1.22.12:4004 [cluster]    
-      root     23951     1  0 16:44 ?        00:00:01 redis-server 10.1.22.12:4005 [cluster]    
+      root     23872     1  0 16:37 ?        00:00:02 redis-server 10.10.10.10:4444 [cluster]    
+      root     23877     1  0 16:37 ?        00:00:02 redis-server 10.10.10.10:4001 [cluster]    
+      root     23882     1  0 16:37 ?        00:00:02 redis-server 10.10.10.10:4002 [cluster]    
+      root     23941     1  0 16:44 ?        00:00:01 redis-server 10.10.10.10:4003 [cluster]    
+      root     23946     1  0 16:44 ?        00:00:01 redis-server 10.10.10.10:4004 [cluster]    
+      root     23951     1  0 16:44 ?        00:00:01 redis-server 10.10.10.10:4005 [cluster]    
       root     24021  5169  0 16:58 pts/1    00:00:00 grep redis
       
      （4）集群部署
      
-      [root@testserver src]# ./redis-cli  --cluster  create 10.1.22.12:4444 10.1.22.12:4001 10.1.22.12:4002 10.1.22.12:4003 10.1.22.12:4004 10.1.22.12:4005 --cluster-replicas 1
+      [root@testserver src]# ./redis-cli  --cluster  create 10.10.10.10:4444 10.10.10.10:4001 10.10.10.10:4002 10.10.10.10:4003 10.10.10.10:4004 10.10.10.10:4005 --cluster-replicas 1
       >>> Performing hash slots allocation on 6 nodes...
       Master[0] -> Slots 0 - 5460
       Master[1] -> Slots 5461 - 10922
       Master[2] -> Slots 10923 - 16383
-      Adding replica 10.1.22.12:4003 to 10.1.22.12:4444
-      Adding replica 10.1.22.12:4004 to 10.1.22.12:4001
-      Adding replica 10.1.22.12:4005 to 10.1.22.12:4002
+      Adding replica 10.10.10.10:4003 to 10.10.10.10:4444
+      Adding replica 10.10.10.10:4004 to 10.10.10.10:4001
+      Adding replica 10.10.10.10:4005 to 10.10.10.10:4002
       >>> Trying to optimize slaves allocation for anti-affinity
       [WARNING] Some slaves are in the same host as their master
-      M: cc54c8a7b3f1b9a2019d6b83f338bff47d493493 10.1.22.12:4444
+      M: cc54c8a7b3f1b9a2019d6b83f338bff47d493493 10.10.10.10:4444
          slots:[0-5460] (5461 slots) master
-      M: 4e5124e4a244fbd5d8b54b5527ea6faa728b8acc 10.1.22.12:4001
+      M: 4e5124e4a244fbd5d8b54b5527ea6faa728b8acc 10.10.10.10:4001
          slots:[5461-10922] (5462 slots) master
-      M: 998edcdd3d2d86f1f32f449f9e24ae43e42f532c 10.1.22.12:4002
+      M: 998edcdd3d2d86f1f32f449f9e24ae43e42f532c 10.10.10.10:4002
          slots:[10923-16383] (5461 slots) master
-      S: 9fa619642d8e2342ad40eeb19911bce7fb96edd2 10.1.22.12:4003
+      S: 9fa619642d8e2342ad40eeb19911bce7fb96edd2 10.10.10.10:4003
          replicates 998edcdd3d2d86f1f32f449f9e24ae43e42f532c
-      S: fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3 10.1.22.12:4004
+      S: fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3 10.10.10.10:4004
          replicates cc54c8a7b3f1b9a2019d6b83f338bff47d493493
-      S: 4954a3d9f4cd9713fca25ec4ec4b458732e0c9a0 10.1.22.12:4005
+      S: 4954a3d9f4cd9713fca25ec4ec4b458732e0c9a0 10.10.10.10:4005
          replicates 4e5124e4a244fbd5d8b54b5527ea6faa728b8acc
        ... ... 
        
@@ -161,8 +161,8 @@
     
       （5）集群验证
       
-       [root@testserver src]# ./redis-cli -h 10.1.22.12 -p 4444 -c   // -c 就是以cluster的形式连接
-       10.1.22.12:4444>  CLUSTER SLOTS
+       [root@testserver src]# ./redis-cli -h 10.10.10.10 -p 4444 -c   // -c 就是以cluster的形式连接
+       10.10.10.10:4444>  CLUSTER SLOTS
        1) 1) (integer) 10923
           2) (integer) 16383
           3) 1) "10.1.22.12"
@@ -187,4 +187,4 @@
        4) 1) "10.1.22.12"
           2) (integer) 4004
           3) "fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3"
-        10.1.22.12:4444> 
+        10.10.10.10:4444> 
