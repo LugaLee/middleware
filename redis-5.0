@@ -111,7 +111,7 @@
       appendonly  yes                                                     //aof日志开启  有需要就开启，它会每次写操作都记录一条日志
       requirepass   ${密码}                                                //密码，注意一般情况下集群中所有redis实例密码需要保持一致
       
-    （4）启动node上的主从redis
+    （4）启动node上的redis服务
       
       [root@testserver src]# redis-server ../redis4001.conf 
       [root@testserver src]# redis-server ../redis4002.conf 
@@ -187,4 +187,4 @@
        4) 1) "10.1.22.12"
           2) (integer) 4004
           3) "fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3"
-        10.10.10.10:4444> 
+       10.10.10.10:4444> 
