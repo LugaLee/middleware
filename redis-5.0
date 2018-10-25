@@ -53,13 +53,13 @@
 
     [root@testserver redis-5.0.0]#vi redis.conf
     主要更新以下参数：
-      bind 10.1.22.12
+      bind 10.10.10.10
       port 4444
       daemonize yes   //设置为“yes”，表明服务在后台运行
       protected-mode yes     //客户端连接认证开启
       pidfile /var/run/redis_4444.pid
       logfile "/usr/local/redis-5.0.0/redis.log"    //定义日志路径
-      requirepass jie.li@xwf-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可）
+      requirepass requirepass@fuck-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可）
       。。。
       此处优化，可从安全性、性能、高可用性、集群拓扑等角度进行
       
