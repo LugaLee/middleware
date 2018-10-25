@@ -4,7 +4,7 @@
 
 ---主机IP：10.1.22.12
 
----应用服务：redis-5.0.0
+---应用服务：redis-5.0.0 release版本
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 1、 Reids-5.0.0新增功能简述
@@ -59,7 +59,7 @@
       protected-mode yes     //客户端连接认证开启
       pidfile /var/run/redis_4444.pid
       logfile "/usr/local/redis-5.0.0/redis.log"    //定义日志路径
-      requirepass jie.li@xwf-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可，）
+      requirepass jie.li@xwf-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可）
       。。。
       此处优化，可从安全性、性能、高可用性、集群拓扑等角度进行
       
@@ -91,7 +91,7 @@
       [root@testserver ~]# cd rubygems-2.7.3
       [root@testserver rubygems-2.7.3]# sudo ruby setup.rb
 
-      此外，看网络上别的教程可能还需要安装ruby-devel 和rpm-build 这这两个包。在centos下可以直接安装。
+      此外，看网络上别的教程可能还需要安装ruby-devel 和rpm-build 这这两个包。在centos下可以直接安装，一般情况下无需安装
 
       [root@testserver ~]# yum -y install ruby-devel rpm-build 
 
@@ -115,11 +115,17 @@
       
       [root@testserver src]# redis-server ../redis4001.conf 
       [root@testserver src]# redis-server ../redis4002.conf 
-      [root@testserver src]# ps -ef|grep redis              
-      root      9781     1  0 14:55 ?        00:00:01 ./redis-server 10.1.22.12:4444                  
-      root      9897     1  0 15:13 ?        00:00:00 redis-server 10.1.22.12:4001  
-      root      9904     1  0 15:13 ?        00:00:00 redis-server 10.1.22.12:4002  
-      root      9909  5169  0 15:13 pts/1    00:00:00 grep redis
+      ...
+      [root@testserver src]# redis-server ../redis4005.conf 
+     
+      [root@testserver src]# ps -ef|grep redis
+      root     23872     1  0 16:37 ?        00:00:02 redis-server 10.1.22.12:4444 [cluster]    
+      root     23877     1  0 16:37 ?        00:00:02 redis-server 10.1.22.12:4001 [cluster]    
+      root     23882     1  0 16:37 ?        00:00:02 redis-server 10.1.22.12:4002 [cluster]    
+      root     23941     1  0 16:44 ?        00:00:01 redis-server 10.1.22.12:4003 [cluster]    
+      root     23946     1  0 16:44 ?        00:00:01 redis-server 10.1.22.12:4004 [cluster]    
+      root     23951     1  0 16:44 ?        00:00:01 redis-server 10.1.22.12:4005 [cluster]    
+      root     24021  5169  0 16:58 pts/1    00:00:00 grep redis
       
      （4）集群部署
      
