@@ -1,0 +1,184 @@
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+---环境描述：CentOS release 6.7 (Final)
+
+---主机IP：10.1.22.12
+
+---应用服务：redis-5.0.0
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1、 Reids-5.0.0新增功能简述
+
+   （1）新的Stream数据类型。[1]
+   （2）新的Redis模块API：Timers and Cluster API。
+   （3）RDB现在存储LFU和LRU信息。
+   （4）集群管理器从Ruby（redis-trib.rb）移植到C代码。可以在redis-cli中。查看`redis-cli —cluster help`了解更多信息。
+   （5）新sorted set命令：ZPOPMIN / MAX和阻塞变量。
+   （6）主动碎片整理V2。
+   （7）增强HyperLogLog实现。
+   （8）更好的内存统计报告。
+   （9）许多带有子命令的命令现在都有一个HELP子命令。
+   （10）客户经常连接和断开连接时性能更好。
+   （11）错误修复和改进。
+   （12）Jemalloc升级到5.1版
+   
+2、 下载安装
+
+    [root@testserver ~]# wget http://download.redis.io/releases/redis-5.0.0.tar.gz      //获取最新发布的稳定版redis-5.0.0下载地址
+    [root@testserver ~]# tar zxvf redis-5.0.0.tar.gz -C /usr/local/
+    [root@testserver ~]# cd /usr/local/redis-5.0.0/
+    [root@testserver redis-5.0.0]# make
+    输出：
+    Hint: It's a good idea to run 'make test' ;)
+    make[1]: Leaving directory `/usr/local/redis-5.0.0/src'
+
+    [root@testserver redis-5.0.0]# make install
+    输出：
+        cd src && make install
+    make[1]: Entering directory `/usr/local/redis-5.0.0/src'
+        CC Makefile.dep
+    make[1]: Leaving directory `/usr/local/redis-5.0.0/src'
+    make[1]: Entering directory `/usr/local/redis-5.0.0/src'
+
+    Hint: It's a good idea to run 'make test' ;)
+
+        INSTALL install
+        INSTALL install
+        INSTALL install
+        INSTALL install
+        INSTALL install
+    make[1]: Leaving directory `/usr/local/redis-5.0.0/src'
+
+3、 配置优化
+
+    [root@testserver redis-5.0.0]#vi redis.conf
+    主要更新以下参数：
+      bind 10.1.22.12
+      port 4444
+      daemonize yes   //设置为“yes”，表明服务在后台运行
+      protected-mode yes     //客户端连接认证开启
+      pidfile /var/run/redis_4444.pid
+      logfile "/usr/local/redis-5.0.0/redis.log"    //定义日志路径
+      requirepass jie.li@xwf-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可，）
+      。。。
+      此处优化，可从安全性、性能、高可用性、集群拓扑等角度进行
+      
+ 4、 服务启动
+ 
+      [root@testserver src]# ./redis-server /usr/local/redis-5.0.0/redis.conf 
+      [root@testserver src]# ps -ef|grep redis
+      root      9710     1  0 14:42 ?        00:00:00 ./redis-server 10.1.22.12:4444                  
+      root      9715  5169  0 14:42 pts/1    00:00:00 grep redis
+      [root@testserver src]# tail -f /usr/local/redis-5.0.0/redis.log 
+
+5、 集群安装（单机版）
+
+    （1）编译安装 Ruby（集群环境下需要此组件）
+    
+      redis-trib.rb脚本需要Ruby 2.2 以上的环境，所以需要手动安装Ruby，这里采用了源码安装的方式。当前Ruby官方最新稳定版本是2.4.2 。
+
+      [root@testserver ~]# wget https://cache.ruby-lang.org/pub/ruby/2.4/ruby-2.4.2.tar.gz
+      [root@testserver ~]# tar xzf ruby-2.4.2.tar.gz
+      [root@testserver ~]# cd ruby-2.4.2
+      [root@testserver ruby-2.4.2]# ./configure
+      [root@testserver ruby-2.4.2]# make
+      [root@testserver ruby-2.4.2]# sudo make install
+     
+      安装rubygems , 从官方网站上下载 ，
+
+      [root@testserver ~]# wget https://rubygems.org/rubygems/rubygems-2.7.3.tgz
+      [root@testserver ~]# tar xzf rubygems-2.7.3.tgz
+      [root@testserver ~]# cd rubygems-2.7.3
+      [root@testserver rubygems-2.7.3]# sudo ruby setup.rb
+
+      此外，看网络上别的教程可能还需要安装ruby-devel 和rpm-build 这这两个包。在centos下可以直接安装。
+
+      [root@testserver ~]# yum -y install ruby-devel rpm-build 
+
+    （2）创建集群节点（一般建议至少3M、3S）
+    
+      [root@testserver redis-5.0.0]# cp redis.conf redis4001.conf
+      [root@testserver redis-5.0.0]# cp redis.conf redis4002.conf
+      ...
+      [root@testserver redis-5.0.0]# cp redis.conf redis4005.conf
+      修改redis4001.conf、redis4002.conf …… redis4005.conf文件中的端口号、日志文件名称、PID名称等等，以防止冲突
+      
+    （3）配置集群节点
+      
+      cluster-enabled  yes                                                //开启集群  把注释#去掉
+      cluster-config-file nodes-4001/4002/4003/4004/4005/4444.conf        //集群的配置  配置文件首次启动自动生成
+      cluster-node-timeout  5000                                           //请求超时  设置5秒够了
+      appendonly  yes                                                     //aof日志开启  有需要就开启，它会每次写操作都记录一条日志
+      requirepass   ${密码}                                                //密码，注意一般情况下集群中所有redis实例密码需要保持一致
+      
+    （4）启动node上的主从redis
+      
+      [root@testserver src]# redis-server ../redis4001.conf 
+      [root@testserver src]# redis-server ../redis4002.conf 
+      [root@testserver src]# ps -ef|grep redis              
+      root      9781     1  0 14:55 ?        00:00:01 ./redis-server 10.1.22.12:4444                  
+      root      9897     1  0 15:13 ?        00:00:00 redis-server 10.1.22.12:4001  
+      root      9904     1  0 15:13 ?        00:00:00 redis-server 10.1.22.12:4002  
+      root      9909  5169  0 15:13 pts/1    00:00:00 grep redis
+      
+     （4）集群部署
+     
+      [root@testserver src]# ./redis-cli  --cluster  create 10.1.22.12:4444 10.1.22.12:4001 10.1.22.12:4002 10.1.22.12:4003 10.1.22.12:4004 10.1.22.12:4005 --cluster-replicas 1
+      >>> Performing hash slots allocation on 6 nodes...
+      Master[0] -> Slots 0 - 5460
+      Master[1] -> Slots 5461 - 10922
+      Master[2] -> Slots 10923 - 16383
+      Adding replica 10.1.22.12:4003 to 10.1.22.12:4444
+      Adding replica 10.1.22.12:4004 to 10.1.22.12:4001
+      Adding replica 10.1.22.12:4005 to 10.1.22.12:4002
+      >>> Trying to optimize slaves allocation for anti-affinity
+      [WARNING] Some slaves are in the same host as their master
+      M: cc54c8a7b3f1b9a2019d6b83f338bff47d493493 10.1.22.12:4444
+         slots:[0-5460] (5461 slots) master
+      M: 4e5124e4a244fbd5d8b54b5527ea6faa728b8acc 10.1.22.12:4001
+         slots:[5461-10922] (5462 slots) master
+      M: 998edcdd3d2d86f1f32f449f9e24ae43e42f532c 10.1.22.12:4002
+         slots:[10923-16383] (5461 slots) master
+      S: 9fa619642d8e2342ad40eeb19911bce7fb96edd2 10.1.22.12:4003
+         replicates 998edcdd3d2d86f1f32f449f9e24ae43e42f532c
+      S: fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3 10.1.22.12:4004
+         replicates cc54c8a7b3f1b9a2019d6b83f338bff47d493493
+      S: 4954a3d9f4cd9713fca25ec4ec4b458732e0c9a0 10.1.22.12:4005
+         replicates 4e5124e4a244fbd5d8b54b5527ea6faa728b8acc
+       ... ... 
+       
+      [OK] All nodes agree about slots configuration.
+      >>> Check for open slots...
+      >>> Check slots coverage...
+      [OK] All 16384 slots covered.
+
+    
+      （5）集群验证
+      
+       [root@testserver src]# ./redis-cli -h 10.1.22.12 -p 4444 -c   // -c 就是以cluster的形式连接
+       10.1.22.12:4444>  CLUSTER SLOTS
+       1) 1) (integer) 10923
+          2) (integer) 16383
+          3) 1) "10.1.22.12"
+             2) (integer) 4002
+             3) "998edcdd3d2d86f1f32f449f9e24ae43e42f532c"
+          4) 1) "10.1.22.12"
+             2) (integer) 4003
+             3) "9fa619642d8e2342ad40eeb19911bce7fb96edd2"
+       2) 1) (integer) 5461
+          2) (integer) 10922
+          3) 1) "10.1.22.12"
+             2) (integer) 4001
+             3) "4e5124e4a244fbd5d8b54b5527ea6faa728b8acc"
+          4) 1) "10.1.22.12"
+             2) (integer) 4005
+             3) "4954a3d9f4cd9713fca25ec4ec4b458732e0c9a0"
+       3) 1) (integer) 0
+          2) (integer) 5460
+          3) 1) "10.1.22.12"
+             2) (integer) 4444
+             3) "cc54c8a7b3f1b9a2019d6b83f338bff47d493493"
+       4) 1) "10.1.22.12"
+          2) (integer) 4004
+          3) "fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3"
+        10.1.22.12:4444> 
