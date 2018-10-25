@@ -58,6 +58,7 @@
       daemonize yes   //设置为“yes”，表明服务在后台运行
       protected-mode yes     //客户端连接认证开启
       pidfile /var/run/redis_4444.pid
+      dir /usr/local/redis-5.0.0/4444/data     //存放集群节点数据信息
       logfile "/usr/local/redis-5.0.0/redis.log"    //定义日志路径
       requirepass requirepass@fuck-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可）
       。。。
