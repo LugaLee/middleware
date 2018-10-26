@@ -59,7 +59,7 @@
       protected-mode yes     //客户端连接认证开启
       pidfile /var/run/redis_4444.pid
       dir /usr/local/redis-5.0.0/4444/data     //存放集群节点数据信息
-      logfile "/usr/local/redis-5.0.0/redis.log"    //定义日志路径
+      logfile "/usr/local/redis-5.0.0/redis4444.log"    //定义日志路径
       requirepass requirepass@fuck-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可）
       。。。
       此处优化，可从安全性、性能、高可用性、集群拓扑等角度进行
@@ -70,7 +70,7 @@
       [root@testserver src]# ps -ef|grep redis
       root      9710     1  0 14:42 ?        00:00:00 ./redis-server 10.10.10.10:4444                  
       root      9715  5169  0 14:42 pts/1    00:00:00 grep redis
-      [root@testserver src]# tail -f /usr/local/redis-5.0.0/redis.log 
+      [root@testserver src]# tail -f /usr/local/redis-5.0.0/redis4444.log 
 
 5、 集群安装（单机版）
 
