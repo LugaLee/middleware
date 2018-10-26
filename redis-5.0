@@ -189,3 +189,52 @@
           2) (integer) 4004
           3) "fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3"
        10.10.10.10:4444> 
+       
+       （6） 集群密码设置
+       
+       [root@testserver src]# ./redis-cli -h 10.10.10.10-p 4002
+       10.10.10.10:4002> config set requirepass requirepass@fuck-id.com!!!         //Redis服务节点认证密码
+       OK
+       10.10.10.10:4002> auth requirepass@fuck-id.com!!!
+       OK
+       10.10.10.10:4002> config set masterauth requirepass@fuck-id.com!!!          //Redis服务集群认证密码
+       OK
+       10.10.10.10:4002> config rewrite
+       OK
+       10.10.10.10:4002> 
+       
+       （7） 集群访问验证
+       
+       [root@testserver src]# ./redis-cli -h 10.10.10.10 -p 4002
+       10.10.10.10:4002> auth requirepass@fuck-id.com!!!
+       OK
+       10.10.10.10:4002> cluster nodes
+       998edcdd3d2d86f1f32f449f9e24ae43e42f532c 10.10.10.10:4002@14002 myself,master - 0 1540523284000 3 connected 10923-16383
+       cc54c8a7b3f1b9a2019d6b83f338bff47d493493 :0@0 master,noaddr - 1540523033945 1540523033945 1 disconnected 0-5460
+       9fa619642d8e2342ad40eeb19911bce7fb96edd2 10.10.10.10:4003@14003 slave 998edcdd3d2d86f1f32f449f9e24ae43e42f532c 0 1540523283178 4 connected
+       4e5124e4a244fbd5d8b54b5527ea6faa728b8acc 10.10.10.10:4001@14001 master - 0 1540523284181 2 connected 5461-10922
+       fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3 10.10.10.10:4004@14004 slave cc54c8a7b3f1b9a2019d6b83f338bff47d493493 0 1540523283579 5 connected
+       4954a3d9f4cd9713fca25ec4ec4b458732e0c9a0 10.10.10.10:4005@14005 slave 4e5124e4a244fbd5d8b54b5527ea6faa728b8acc 0 1540523284682 6 connected
+       10.10.10.10:4002> 
+
+6、 设置开机自启动模式
+
+    （1） 将启动脚本复制到/etc/init.d目录下，本例将以4444节点为例，启动脚本命名为redis4444（其余剩余节点可依照此方式进行）
+     [root@testserver ~]# cp /root/redis-5.0.0/utils/redis_init_script /etc/init.d/reids4444
+     
+    （2） 修改redis4444配置文件，主要涉及以下参数信息，修改完后保存
+     # chkconfig: 2345 80 90
+     # description: Redis is a persistent key-value database
+
+     REDISPORT=4444
+     EXEC=/usr/local/redis-5.0.0/src/redis-server
+     CLIEXEC=/usr/local/redis-5.0.0/src/redis-cli
+
+     PIDFILE=/var/run/redis_${REDISPORT}.pid
+     CONF="/usr/local/redis-5.0.0/4444/redis${REDISPORT}.conf"
+     
+    （3） 注册服务及开机启动设置
+     [root@testserver init.d]# chkconfig --add redis4444                           //注册为系统服务
+     [root@testserver init.d]# chkconfig redis4444 on                              //设置为开机自启动服务
+     [root@testserver init.d]# service redis4444 start/stop/restart       或        
+     [root@testserver init.d]#/etc/init.d/redis4444 start/stop/restart            //redis节点服务启动、停止及重启
