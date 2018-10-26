@@ -128,7 +128,7 @@
       root     23951     1  0 16:44 ?        00:00:01 redis-server 10.10.10.10:4005 [cluster]    
       root     24021  5169  0 16:58 pts/1    00:00:00 grep redis
       
-     （4）集群部署
+     （5）集群部署
      
       [root@testserver src]# ./redis-cli  --cluster  create 10.10.10.10:4444 10.10.10.10:4001 10.10.10.10:4002 10.10.10.10:4003 10.10.10.10:4004 10.10.10.10:4005 --cluster-replicas 1
       >>> Performing hash slots allocation on 6 nodes...
@@ -160,7 +160,7 @@
       [OK] All 16384 slots covered.
 
     
-      （5）集群验证
+      （6）集群验证
       
        [root@testserver src]# ./redis-cli -h 10.10.10.10 -p 4444 -c   // -c 就是以cluster的形式连接
        10.10.10.10:4444>  CLUSTER SLOTS
@@ -190,7 +190,7 @@
           3) "fd1b809a6ba174b8f68aa5e1dc31fee3d236fcd3"
        10.10.10.10:4444> 
        
-       （6） 集群密码设置
+       （7） 集群密码设置
        
        [root@testserver src]# ./redis-cli -h 10.10.10.10-p 4002
        10.10.10.10:4002> config set requirepass requirepass@fuck-id.com!!!         //Redis服务节点认证密码
@@ -203,7 +203,7 @@
        OK
        10.10.10.10:4002> 
        
-       （7） 集群访问验证
+       （8） 集群访问验证
        
        [root@testserver src]# ./redis-cli -h 10.10.10.10 -p 4002
        10.10.10.10:4002> auth requirepass@fuck-id.com!!!
