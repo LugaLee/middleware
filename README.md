@@ -7,3 +7,4 @@
 * [技术文章]进程与内存关系
 * [技术文章]Redis5.0.0集群环境搭建与部署
 * [技术文章]Couchbase5.5.2集群环境搭建与部署
+![](C:\Users\15800\Pictures\couchbase.JPG)
