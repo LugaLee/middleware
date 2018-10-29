@@ -1,0 +1,193 @@
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+---环境描述：CentOS release 6.7 (Final)
+
+---主机IP：10.10.10.10（此处真实地址已xx）
+
+---应用服务：couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm版本
+
+                                        
+                                            分布式数据库Couchbase 5.5集群环境搭建
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1、 环境就绪-升级或安装之前检查是否有其他版本的服务在运行，然后对其进行处理
+
+    [root@testserver ~]# /opt/couchbase/etc/couchbase_init.d stop
+    Stopping couchbase-server-community
+                                                           [  OK  ]
+    [root@testserver ~]# rpm -qa|grep couchbase
+    couchbase-server-community-4.1.1-5914.x86_64
+    
+    [root@testserver ~]# rpm -e couchbase-server-community-4.1.1-5914.x86_64
+    
+    ...至此，已卸载完成
+    
+2、 安装配置
+
+   （1） 下载安装包
+    [root@testserver none]#wget http://packages.couchbase.com/releases/5.5.2/couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm
+    --2018-10-29 16:06:20--  http://packages.couchbase.com/releases/5.5.2/couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm
+    Resolving packages.couchbase.com... 13.33.172.214, 13.33.172.75, 13.33.172.102, ...
+    Connecting to packages.couchbase.com|13.33.172.214|:80... connected.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 219152116 (209M) [application/x-rpm]
+    Saving to: “couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm”
+    100%[==========================================================================================================================>] 219,152,116 3.58M/s   in 89s     
+
+    2018-10-29 16:07:55 (2.34 MB/s) - “couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm” saved [219152116/219152116]
+    
+    （2） 安装OpenSSL包-若操作系统已安装过，则忽略
+     [root@testserver none]# yum install openssl098e-0.9.8e-17.el6.centos.2.x86_64
+     
+    （3） 安装Couchbase组件包
+     [root@testserver none]# rpm --install couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm  
+     Warning: Transparent hugepages looks to be active and should not be.
+     Please look at https://developer.couchbase.com/documentation/server/current/install/thp-disable.html as for how to PERMANENTLY alter this setting.
+     Warning: Transparent hugepages looks to be active and should not be.
+     Please look at https://developer.couchbase.com/documentation/server/current/install/thp-disable.html as for how to PERMANENTLY alter this setting.
+     Warning: Swappiness is not set to 0.
+     Please look at https://developer.couchbase.com/documentation/server/current/install/install-swap-space.html as for how to PERMANENTLY alter this setting.
+     Minimum RAM required  : 4 GB
+     System RAM configured : 7.69 GB
+
+     Minimum number of processors required : 4 cores
+     Number of processors on the system    : 4 cores
+
+     Starting couchbase-server
+     [  OK  ]
+     
+     You have successfully installed Couchbase Server.
+     Please browse to http://testserver:8091/ to configure your server.
+     Please refer to http://couchbase.com for additional resources.
+
+     Please note that you have to update your firewall configuration to
+     allow connections to the following ports:
+     4369, 8091 to 8094, 9100 to 9105, 9998, 9999, 11207, 11209 to 11211,
+     11214, 11215, 18091 to 18093, and from 21100 to 21299.
+
+     By using this software you agree to the End User License Agreement.
+     See /opt/couchbase/LICENSE.txt.
+     
+ 3、 服务验证
+ 
+    （1） 执行文件权限
+     [root@testserver none]#  chown -R couchbase:couchbase .
+     
+    （25） 查看服务状态
+     [root@testserver none]# ps -ef|grep couchbase |wc -l
+     26
+      
+    （3） 控制台验证
+     http://10.10.10.10:8091/ui/index.html 即可进入首页，显示：Couchbase Server---Enterprise Edition 5.5.2 build 3733 以及下一步操作“Setup New Cluster”
+     和“Join Existing Cluster”
+      
+4、  初始化操作
+
+    （1） 账户设置
+    
+     Cluster Name:CouchdbCluster
+     Create Admin Username:Administrator
+     Create/Confirm Password:password
+     Terms and Conditions  Enterprise Edition  Couchbase Server must be licensed for use in production environments.
+     
+    （2） 运行环境参数配置
+     
+     Configure:
+     Host Name / IP Address:10.10.10.10
+     Data Disk Path：/opt/couchbase/var/lib/couchbase/data
+     Indexes Disk Path：/opt/couchbase/var/lib/couchbase/data
+     Analytics Disk Paths：/opt/couchbase/var/lib/couchbase/data
+     Service Memory Quotas：
+     Data/Index/Search/Analytics/Query/Eventing:4057/512/512/1531/_/256MB
+     Index Storage Setting: Standard Global Secondary or Memory-Optimized  
+     此处初始化主要包含2部分：存储路径设置、服务器名称或IP以及集群创建方式。 存储路径可以自定义，例如：Databases Path设置为：/opt/couchbase/var/lib/couchbase/data/,Indexes
+     Path设置为：/opt/couchbase/var/lib/couchbase/data/ ;Hostname定义为本机ip地址10.10.10.10。 首次安装couchbase服务，集群选择“Start a new cluster”并为其指定内存大小，并
+     且在集群环境中，所有集群的Mem内存必须都大于此值。
+
+     （3） Buckets配置
+      Bucket Name:fuck_id
+      Memory Quota in megabytes per server node:1024MB
+      Bucket Type:Couchbase or Memcached or Ephemeral，此处选择“Couchbase”
+      Replicas:Enable（Number of replica (backup) copies）Warning: you do not have enough data servers to support this number of replicas.Replicate view indexes
+      Bucket Max Time-To-Live：可选择配置
+      Compression Mode ：Off or Passive or Active
+      Conflict Resolution:Sequence number or Timestamp
+      Ejection Method：Value-only or Full
+      Bucket Priority :Default or High
+      Auto-Compaction:Override the default auto-compaction settings?可选择配置
+      Flush：Enable可选择配置
+      
+      （4） 控制台/中心页面展示
+      
+      Dashboard：
+                第一层显示active nodes、failed-over nodes、nodes pending rebalance、inactive nodes状态值
+                第二层显示Data、Index、Serach、Query、Eventing、Analytics、XDCR状态值
+                第三层显示Data Service Memory、Data Service Disk当前使用参数值
+                第四层显示Buckets Operations Per Second、Disk Fetches Per Second曲线走势图
+                
+      Servers： 显示Name、Group、Service（data/eventing/index/query/search）、资源使用信息（CPU、物理内存、swap、磁盘、items等）
+      Buckets： 显示ADD BUCKET功能，以及name、items、resident、ops/sec、RAM used/quota、disk used等信息展示
+      XDCR Replications：显示Remote Clusters（Add Remote Cluster）：Name、IP地址，Ongoing Replications（bucket	protocol、from、to、filtered、status、when）
+      其他功能列表：Security、Settings、Logs、Documents、Query、Search、Analytics、Eventing、Indexes
+                
+      
+ 5、  集群配置
+ 
+      Couchbase Server是一个对等的拓扑结构，在该拓扑结构上所有节点是平等的并能按需通信。没有主节点，从节点，配置节点，名称节点，头节点等概念，所有节点上的软件都是相
+      同的。它允许在不考虑他们“类型”的情况下添加或删除节点。该模式通常能在云基础设施模型上工作的特别好。对于 kubernetes，这意味着我们可以为所有Couchbase 节点使用完全相同的容器镜像。
+      目前，基于couchbase集群环境部署搭建主要通过以下2种方式进行：
+      •  手工加入方式创建Couchbase集群
+      •  使用Kubernetes创建Couchbase集群
+      此文档主要基于手工方式创建couchbase集群拓扑进行编写，后续的所有部署步骤操作均在此方式下进行。
+      
+     （1） 部署步骤
+     
+      一个典型的Couchbase 集群创建过程如下：
+      •  启动Couchbase：启动所需要创建的Couchbase宿主机服务
+      •  选择控制机：选择其中任一服务器couchbase服务作为控制中心，通过控制台添加所有其他服务器来创建集群
+      •  再平衡集群：重新平衡集群，使数据跨集群分布
+      
+     （2） 安装及启动所有节点couchbase服务
+     
+     （3） 选择控制机
+     
+      以10.10.10.10为中心，完成基本的业务配置，包括业务所需的buckets创建、索引的添加、其他参数的配置，此处可在单机安装初始化操作时可以进行。<图片暂时没有插入>
+      
+     （4） 创建集群
+     
+      进入10.10.10.10控制中心，点击“Server ” 进入服务节点页面，点击“Add Server”进入添加服务器节点窗体，输入需要加入的服务器IP、账户信息和服务操作行为参数。
+      点击“Add Server”完成添加，此时，Server Nodes窗体显示已加入的服务器信息，其状态为“Pending Balance”，属性为Pending Add。依次加入其它节点服务器，新加入
+      的服务器处于 Pending 状态，意味着数据尚未进行同步。只有数据进行同步之后，这个节点才能提供服务。
+
+
+      
+     （5） 再平衡集群
+     
+      点击“Reblance”操作按钮，进行数据同步，同时窗体显示进度条，以供查看当前状态信息。一旦所有的节点均已重新平衡完成后，Couchbase集群将会随时响应请求，进行业务
+      操作。
+
+
+6、  配置优化
+
+    （1）  内存参数
+     
+     建议：Total Node RAM Quota Size ⇐ 60% Physical Memory
+     以单机环境为例：服务器物理内存为8G，则xwf_main、xwf_events及did_devices总的Bucket 内存分配为60% * 8 = 4.8G 因此，针对Buckets，依据实际业务需求，内存可
+     以分配为以下大xwf_main内存为1728MB xwf_events内存为2560MB did_devices内存为512MB
+     
+    （2）  副本集数量
+
+     建议：复制集数量设置为2，数据将在两个节点上保存，任何一个节点损坏数据仍然存在。
+     Replicas：Number of replica（bcakup）copies 设置为2
+
+
+7、  其他
+
+     5.5版本从功能特性、界面布局与之前的版本都有较大差异
+
+
+      
+
+
+    
