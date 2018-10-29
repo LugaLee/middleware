@@ -1,4 +1,4 @@
-                                        Btrace环境搭建
+                                               Btrace环境搭建
 
 基础环境：
 ---------------------------------------------------------------------------------------------------------------------------------------        
@@ -83,7 +83,7 @@
       --version             Show the version
       -v                    Run in verbose mode
       -o <file>             The path to store the probe output (will disable showing the output in console)
-    -u                    Run in trusted mode
+      -u                    Run in trusted mode
       -d <path>             Dump the instrumented classes to the specified path
       -pd <path>            The search path for the probe XML descriptors
       -classpath <path>     Specify where to find user class files and annotation processors
