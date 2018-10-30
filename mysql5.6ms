@@ -117,7 +117,7 @@
      mysql> show slave status\G;
      *************************** 1. row ***************************
                Slave_IO_State: Waiting for master to send event
-                  Master_Host: 10.1.22.7
+                  Master_Host: 10.10.10.10
                   Master_User: root
                   Master_Port: 3306
                 Connect_Retry: 60
