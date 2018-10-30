@@ -1,0 +1,163 @@
+     +------------------+----------+--------------+------------------+-------------------+
+     | Hostname        |   IP Addr  |   Redis Port   | Sentinel Port |       Remark      |
+     +------------------+----------+--------------+------------------+-------------------+
+     | M               | 10.10.10.10|      2222      |  222222       |                   |
+     +------------------+----------+--------------+------------------+-------------------+
+     | S               | 11.11.11.11|      2222      |  22222        |                   |
+     +------------------+----------+--------------+------------------+-------------------+
+     | S               | 12.12.12.12|      2222      |  22222        |                   |
+     +------------------+----------+--------------+------------------+-------------------+
+1、下载安装（M-2S主机均进行）
+
+    [root@testserver ~]# wget http://download.redis.io/releases/redis-5.0.0.tar.gz      //获取最新发布的稳定版redis-5.0.0下载地址
+    [root@testserver ~]# tar zxvf redis-5.0.0.tar.gz -C /usr/local/
+    [root@testserver ~]# cd /usr/local/redis-5.0.0/
+    [root@testserver redis-5.0.0]# make
+    输出：
+    Hint: It's a good idea to run 'make test' ;)
+    make[1]: Leaving directory `/usr/local/redis-5.0.0/src'
+
+    [root@testserver redis-5.0.0]# make install
+    输出：
+        cd src && make install
+    make[1]: Entering directory `/usr/local/redis-5.0.0/src'
+        CC Makefile.dep
+    make[1]: Leaving directory `/usr/local/redis-5.0.0/src'
+    make[1]: Entering directory `/usr/local/redis-5.0.0/src'
+
+    Hint: It's a good idea to run 'make test' ;)
+
+        INSTALL install
+        INSTALL install
+        INSTALL install
+        INSTALL install
+        INSTALL install
+    make[1]: Leaving directory `/usr/local/redis-5.0.0/src'
+
+3、  Master-Replica 主从配置优化
+
+     [root@testserver redis-5.0.0]#vi redis.conf
+      针对M主机，主要更新以下参数：
+      bind 10.10.10.10
+      port 2222
+      daemonize yes   //设置为“yes”，表明服务在后台运行
+      protected-mode yes     //客户端连接认证开启
+      pidfile /var/run/redis_2222.pid
+      dir /usr/local/redis-5.0.0/data     //存放集群节点数据信息
+      logfile "/usr/local/redis-5.0.0/logs/redis-2222.log"    //定义日志路径
+      requirepass requirepass@fuck-id.com!!!    //开启访问密码认证（密码设置可以在集群前后均可）
+      。。。
+      
+      针对Slave从主机，需添加以下参数：
+      replicaof 10.10.10.10 2222                 //redis 5.x之前为slaveof参数
+      masterauth requirepass@fuck-id.com!!!      //访问Master主服务时的密码认证
+      
+ 4、  服务启动
+ 
+      [root@testserver src]# ./redis-server /usr/local/redis-5.0.0/redis.conf 
+      [root@testserver src]# ps -ef|grep redis
+      root      9710     1  0 14:42 ?        00:00:00 ./redis-server 10.10.10.10:2222                  
+      root      9715  5169  0 14:42 pts/1    00:00:00 grep redis
+      [root@testserver src]# tail -f /usr/local/redis-5.0.0/redis-2222.log 
+      
+      [root@XWF-MKZ: src]# ./redis-server /usr/local/redis-5.0.0/redis.conf 
+      [root@XWF-MKZ:/usr/local/redis-5.0.0]# ps -ef|grep redis
+      root      6475     1  0 17:57 ?        00:00:00 src/redis-server 11.11.11.11:2222           
+      root      6611 17088  0 17:57 pts/0    00:00:00 grep --color=auto redis
+      root@XWF-MKZ:/usr/local/redis-5.0.0# tail -f /usr/local/redis-5.0.0/logs/redis-2222.log 
+      32484:S 30 Oct 2018 18:16:45.770 * Connecting to MASTER 10.10.10.10:2222            //此日志表明已与Master主服务建立通信连接
+      32484:S 30 Oct 2018 18:16:45.770 * MASTER <-> REPLICA sync started
+      32484:S 30 Oct 2018 18:16:45.771 * Non blocking connect for SYNC fired the event.
+      32484:S 30 Oct 2018 18:16:45.772 * Master replied to PING, replication can continue...
+      32484:S 30 Oct 2018 18:16:45.772 * Partial resynchronization not possible (no cached master)
+      32484:S 30 Oct 2018 18:16:45.774 * Full resync from master: 017bda680e2d138dc56185299801e3da1fccb11f:630
+      32484:S 30 Oct 2018 18:16:45.875 * MASTER <-> REPLICA sync: receiving 176 bytes from master
+      32484:S 30 Oct 2018 18:16:45.875 * MASTER <-> REPLICA sync: Flushing old data
+      32484:S 30 Oct 2018 18:16:45.875 * MASTER <-> REPLICA sync: Loading DB in memory
+      32484:S 30 Oct 2018 18:16:45.875 * MASTER <-> REPLICA sync: Finished with success
+      
+      [root@XWF-BorgenCouchbase01: src]# ./redis-server /usr/local/redis-5.0.0/redis.conf 
+      [root@XWF-BorgenCouchbase01:/usr/local/redis-5.0.0]# ps -ef|grep redis
+      root     18558     1  0 17:44 ?        00:00:01 src/redis-server 12.12.12.12:2222           
+      root     19958 12875  0 18:02 pts/1    00:00:00 grep --color=auto redis
+      [root@XWF-BorgenCouchbase01 src]# tail -f /usr/local/redis-5.0.0/redis-2222.log 
+      8408:S 30 Oct 2018 18:33:38.750 * Connecting to MASTER 10.10.10.10:2222               //此日志表明已与Master主服务建立通信连接
+      8408:S 30 Oct 2018 18:33:38.750 * MASTER <-> REPLICA sync started
+      8408:S 30 Oct 2018 18:33:38.751 * Non blocking connect for SYNC fired the event.
+      8408:S 30 Oct 2018 18:33:38.751 * Master replied to PING, replication can continue...
+      8408:S 30 Oct 2018 18:33:38.752 * Partial resynchronization not possible (no cached master)
+      8408:S 30 Oct 2018 18:33:38.764 * Full resync from master: 017bda680e2d138dc56185299801e3da1fccb11f:0
+      8408:S 30 Oct 2018 18:33:38.852 * MASTER <-> REPLICA sync: receiving 175 bytes from master
+      8408:S 30 Oct 2018 18:33:38.853 * MASTER <-> REPLICA sync: Flushing old data
+      8408:S 30 Oct 2018 18:33:38.853 * MASTER <-> REPLICA sync: Loading DB in memory
+      8408:S 30 Oct 2018 18:33:38.853 * MASTER <-> REPLICA sync: Finished with success
+      
+ 5、  Redis Master-Replica Sentinel模式配置
+      
+     （1） Master（IP为10.10.10.10）哨兵配置
+      针对M主机，主要更新以下参数：
+      bind 10.10.10.10
+      port 22222
+      daemonize yes   //设置为“yes”，表明服务在后台运行
+      protected-mode yes     //客户端连接认证开启
+      dir /usr/local/redis-5.0.0/data     //存放集群节点数据信息
+      logfile "/usr/local/redis-5.0.0/logs/redis--sentinel-2222.log"    //定义日志路径
+      
+      sentinel monitor mymaster 10.10.10.10 22222 2
+      sentinel auth-pass mymaster requirepass@fuck-id.com!!!   //开启访问密码认证（密码设置可以在集群前后均可）
+      sentinel down-after-milliseconds mymaster 30000
+      sentinel failover-timeout mymaster 180000
+      
+     （2）Master主机监听服务启动
+      [root@XWF-BorgenCouchbase01:/usr/local/redis-5.0.0]# src/redis-sentinel ../redis-5.0.0/sentinel.conf 
+      [root@XWF-BorgenCouchbase01:/usr/local/redis-5.0.0]# ps -ef|grep redis
+      root     18558     1  0 17:44 ?        00:00:04 src/redis-server 10.10.10.10:2222           
+      root     23318 23268  0 18:43 pts/0    00:00:00 tail -f redis--sentinel-2222.log
+      root     23385     1  0 18:44 ?        00:00:00 src/redis-sentinel 10.10.10.10:22222 [sentinel]  
+      root     23391 12875  0 18:44 pts/1    00:00:00 grep --color=auto redis
+   
+      root@XWF-BorgenCouchbase01:/usr/local/redis-5.0.0/logs# tail -f redis--sentinel-2222.log 
+      23384:X 30 Oct 2018 18:44:51.252 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+      23384:X 30 Oct 2018 18:44:51.252 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=23384, just started
+      23384:X 30 Oct 2018 18:44:51.252 # Configuration loaded
+      23385:X 30 Oct 2018 18:44:51.253 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+      23385:X 30 Oct 2018 18:44:51.254 * Running mode=sentinel, port=22222.
+      23385:X 30 Oct 2018 18:44:51.254 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+      23385:X 30 Oct 2018 18:44:51.296 # Sentinel ID is e36ae36386f876bf7845896fa7f47c666b4f2bb2
+      23385:X 30 Oct 2018 18:44:51.296 # +monitor master mymaster 10.10.10.10 2222 quorum 2
+      23385:X 30 Oct 2018 18:44:51.297 * +slave slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
+      23385:X 30 Oct 2018 18:44:51.326 * +slave slave 12.12.12.12:2222 12.12.12.12 2222 @ mymaster 10.10.10.10 2222
+      
+     （3）Replica从主机（IP为11.11.11.11及12.12.12.12）哨兵配置
+      bind 11.11.11.11/12.12.12.12
+      port 22222
+      daemonize yes   //设置为“yes”，表明服务在后台运行
+      protected-mode yes     //客户端连接认证开启
+      dir /usr/local/redis-5.0.0/data     //存放集群节点数据信息
+      logfile "/usr/local/redis-5.0.0/logs/redis--sentinel-2222.log"    //定义日志路径
+      
+      sentinel monitor mymaster 10.10.10.10 22222 2
+      sentinel auth-pass mymaster requirepass@fuck-id.com!!!   //开启访问密码认证（密码设置可以在集群前后均可）
+      sentinel down-after-milliseconds mymaster 30000
+      sentinel failover-timeout mymaster 180000
+
+      （4）Replica从主机监听服务启动
+      [root@XWF-MKZ:/usr/local/redis-5.0.0]# src/redis-sentinel ../redis-5.0.0/sentinel.conf 
+      [root@XWF-MKZ:/usr/local/redis-5.0.0]# ps -ef|grep redis
+      root     18558     1  0 17:44 ?        00:00:04 src/redis-server 11.11.11.11:2222           
+      root     23318 23268  0 18:43 pts/0    00:00:00 tail -f redis--sentinel-2222.log
+      root     23385     1  0 18:44 ?        00:00:00 src/redis-sentinel 11.11.11.11:22222 [sentinel]  
+      root     23391 12875  0 18:44 pts/1    00:00:00 grep --color=auto redis
+      [root@XWF-MKZ:/usr/local/redis-5.0.0]#tail -f /usr/local/redis-5.0.0/logs/redis--sentinel-2222.log 
+      8531:X 30 Oct 2018 19:19:34.507 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8531, just started
+      8531:X 30 Oct 2018 19:19:34.507 # Configuration loaded
+      8532:X 30 Oct 2018 19:19:34.511 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+      8532:X 30 Oct 2018 19:19:34.652 * Running mode=sentinel, port=22222.
+      8532:X 30 Oct 2018 19:19:34.652 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+      8532:X 30 Oct 2018 19:19:34.778 # Sentinel ID is 2de562513d7f6923704dd231ca1be1a1370f77c4
+      8532:X 30 Oct 2018 19:19:34.778 # +monitor master mymaster 10.10.10.10 2222 quorum 2
+      8532:X 30 Oct 2018 19:19:34.780 * +slave slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
+      8532:X 30 Oct 2018 19:19:34.828 * +slave slave 12.12.12.12:2222 12.12.12.12 2222 @ mymaster 10.10.10.10 2222
+      8532:X 30 Oct 2018 19:19:35.857 * +sentinel sentinel e36ae36386f876bf7845896fa7f47c666b4f2bb2 10.10.10.10 22222 @ mymaster 10.10.10.10 2222
+      
+ 6、 哨兵高可用验证
