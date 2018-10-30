@@ -1,0 +1,166 @@
+-------------------------------------------------------------------------------------------------------------------------------------------
+---环境描述
+
+---Master主机IP：10.10.10.10（此处真实地址已xx）
+            OS: Ubuntu 14.04.4 LTS
+          PORT: 3306
+
+---Slave 主机IP：10.10.10.11（此处真实地址已xx）  
+            OS：CentOS release 6.7 (Final)
+          PORT: 3306
+
+---应用服务：Mysql5.6.33版本
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+1、 环境就绪
+
+   （1） 安装Master主机Mysql服务
+   
+   （2） 安装Slave主机Mysql服务
+    此处安装操作不在讨论范围，具体安装配置可参考官网操作
+    
+2、 Master主机配置-IP:10.10.10.10
+
+   （1） 更新my.cnf配置文件
+    root@XWF-MKZ:/home/ubuntu# vi /etc/mysql/my.cnf  
+    打开二进制日志，指定唯一的servr ID，如下所示：
+    [mysqld]
+    user            = mysql
+    pid-file        = /var/run/mysqld/mysqld.pid
+    socket          = /var/run/mysqld/mysqld.sock
+    port            = 3306
+    basedir         = /usr
+    datadir         = /var/lib/mysql
+    tmpdir          = /tmp
+
+    server-id=1         //新增，指定唯一的server ID
+    log-bin=mysql-bin   //新增，打开二进制日志
+    
+   （2） 重启mysql服务
+    root@XWF-MKZ:/home/ubuntu# /etc/init.d/mysql restart 
+     
+   （3） 登陆mysql
+    root@XWF-MKZ:/usr/bin# mysql -u root -p
+    Enter password: 
+    Welcome to the MySQL monitor.  Commands end with ; or \g.
+    Your MySQL connection id is 324
+    Server version: 5.6.33-0ubuntu0.14.04.1-log (Ubuntu)
+
+    Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+    ...
+
+    Type 'help;' or '\h' for help. Type '\c' to clear the current input statement
+     
+    （4） 查看Master状态信息
+     mysql> show master status;
+     +------------------+----------+--------------+------------------+-------------------+
+     | File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
+     +------------------+----------+--------------+------------------+-------------------+
+     | mysql-bin.000001 |    15276 |              |                  |                   |
+     +------------------+----------+--------------+------------------+-------------------+
+     1 row in set (0.00 sec) 或
+      
+     mysql> show master status\G;
+     *************************** 1. row ***************************
+                          File: mysql-bin.000001
+                      Position: 57604
+                  Binlog_Do_DB: 
+              Binlog_Ignore_DB: 
+          Executed_Gtid_Set: 
+     1 row in set (0.00 sec)
+
+     ERROR: 
+     No query specified
+      
+    （5） Slave赋予权限
+     mysql> grant all privileges on *.* to 'root'@'10.10.10.11' identified by '123456';
+     Query OK, 0 rows affected (0.00 sec)
+
+     mysql> flush privileges; 
+     Query OK, 0 rows affected (0.00 sec)
+     
+3、  Slave主机配置-IP:10.10.10.11
+   
+    （1） 更新my.cnf配置文件
+     [mysqld]
+     port=3306
+     basedir=/usr/local/mysql
+     datadir=/home/mysql
+     socket=/home/mysql/mysql.sock
+     user=mysql
+
+     server-id = 2
+     relay-log=/home/MysqlData2/relay-log
+     #skip-grant-tables
+       
+    （2） 重启mysql服务
+     root@XWF-MKZ:/home/ubuntu# /etc/init.d/mysql restart 
+     
+    （3） 执行Slave相关配置操作
+     [root@testserver etc]# mysql -u root -p
+     Enter password: 
+     Welcome to the MySQL monitor.  Commands end with ; or \g.
+     Your MySQL connection id is 2
+     Server version: 5.6.35 MySQL Community Server (GPL)
+     ...
+     mysql> stop slave;
+     Query OK, 0 rows affected, 1 warning (0.00 sec)
+      
+     mysql> change master to master_host='10.10.10.10', master_user='root', master_password='123456', master_log_file='mysql-bin.000001', master_log_pos= 15276;
+     Query OK, 0 rows affected, 2 warnings (0.85 sec) 
+     
+     mysql> start slave;
+     Query OK, 0 rows affected (0.07 sec)
+     
+    （4） 查看Slave状态信息
+     mysql> show slave status\G;
+     *************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: 10.1.22.7
+                  Master_User: root
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: mysql-bin.000001
+          Read_Master_Log_Pos: 83652
+               Relay_Log_File: mysqld-relay-bin.000002
+                Relay_Log_Pos: 283
+        Relay_Master_Log_File: mysql-bin.000001
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+        ...
+        1 row in set (0.00 sec)
+
+      ERROR: 
+      No query specified
+      若Slave_IO_Running: Yes及Slave_SQL_Running: Yes  则表明M-S机制标识成功
+      
+      
+  4、M-S主从服务验证
+  
+     在M（IP为10.10.10.10）主机中，登陆mysql，执行以下操作：show processlist\G; 查看相关主从操作流
+     mysql> show processlist\G; 
+     *************************** 3. row ***************************
+           Id: 324
+         User: root
+         Host: localhost     //即IP为10.10.10.10
+           db: NULL
+      Command: Query
+         Time: 0
+        State: System lock
+         Info: show processlist
+      *************************** 4. row ***************************
+           Id: 1698
+         User: root
+         Host: 10.10.10.11:38871
+           db: NULL
+      Command: Binlog Dump
+         Time: 2539
+        State: Master has sent all binlog to slave; waiting for binlog to be updated   //此状态信息表明主从（M-S）服务已建立成功
+         Info: NULL
+      4 rows in set (0.00 sec)
+
+    ERROR: 
+    No query specified
+
+      
