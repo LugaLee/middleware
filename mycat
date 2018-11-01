@@ -1,0 +1,189 @@
+-------------------------------------------------------------------------------------------------------------------------------------------
+---环境描述
+
+---Master主机IP：10.10.10.10（此处真实地址已xx）
+            OS: Ubuntu 14.04.4 LTS
+          PORT: 3306
+
+---Slave 主机IP：10.10.10.11（此处真实地址已xx）  
+            OS：CentOS release 6.7 (Final)
+          PORT: 3306
+
+---应用服务：Mysql5.6.33版本
+
+---数据库中间件：
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+1、 JDK安装与环境变量配置
+
+    [root@testserver ~]# java -version
+    java version "1.8.0_112"
+    Java(TM) SE Runtime Environment (build 1.8.0_112-b15)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.112-b15, mixed mode)
+    [root@testserver ~]# echo $JAVA_HOME
+    /usr/local/jdk1.8.0
+    
+    [root@testserver ~]# vi /etc/profile
+    # JAVA ENVIROMENT SETTING
+    export JAVA_HOME=/usr/local/jdk1.8.0
+    export JRE_HOME=${JAVA_HOME}/jre
+    export CLASSPATH=.:${JAVA_HOME}/lib/tools.jar:${JAVA_HOME}/lib/dt.jar
+    export PATH=${JAVA_HOME}/bin:$PATH
+
+    MYCAT_HOME=/usr/local/mycat
+    [root@testserver ~]# source /etc/profile 
+    
+2、 MyCAT安装与配置
+
+   （1） 获取MyCAT最新软件包
+    [root@testserver local]# wget http://dl.mycat.io/1.6.6.1/Mycat-server-1.6.6.1-release-20180908155252-linux.tar.gz
+    --2018-11-01 14:20:41--  http://dl.mycat.io/1.6.6.1/Mycat-server-1.6.6.1-release-20180908155252-linux.tar.gz
+    Resolving dl.mycat.io... 210.51.26.184
+    Connecting to dl.mycat.io|210.51.26.184|:80... connected.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 17534600 (17M) [application/octet-stream]
+    Saving to: “Mycat-server-1.6.6.1-release-20180908155252-linux.tar.gz”
+
+    100%[=================================================================================================================================================>] 17,534,600   510K/s   in 35s     
+
+    2018-11-01 14:21:21 (495 KB/s) - “Mycat-server-1.6.6.1-release-20180908155252-linux.tar.gz” saved [17534600/17534600]
+    
+    （2） 解压安装
+     [root@testserver local]# tar zxvf Mycat-server-1.6.6.1-release-20180908155252-linux.tar.gz -C /usr/local/
+     
+    （3） 配置server.xml文件
+     [root@testserver conf]# vi server.xml  
+     修改以下参数内容：
+     <user name="root" defaultAccount="true">
+                <property name="password">123456</property>
+                <property name="schemas">TESTDB</property>
+
+                <!-- 表级 DML 权限设置 -->
+                <!--            
+                <privileges check="false">
+                        <schema name="TESTDB" dml="0110" >
+                                <table name="tb01" dml="0000"></table>
+                                <table name="tb02" dml="1111"></table>
+                        </schema>
+                </privileges>           
+                 -->
+        </user>
+
+        <user name="user">
+                <property name="password">user</property>
+                <property name="schemas">TESTDB</property>
+                <property name="readOnly">true</property>
+        </user>
+        
+    （4） 配置schema.xml文件
+     [root@testserver conf]# vi schema.xml
+     修改以下参数内容：
+     <writeHost host="hostM1" url="10.10.10.10:3306" user="root"
+                                   password="123456">
+                        <!-- can have multi read hosts -->
+                        <readHost host="hostS2" url="10.10.10.11:3306" user="root" password="123456" />
+                </writeHost>
+     
+     （5） 启动Mycat应用服务
+      [root@testserver conf]# ../bin/mycat start
+      Starting Mycat-server...
+      若日志打印如下异常：“Caused by: io.mycat.config.util.ConfigException: Illegal table conf : table [ TRAVELRECORD ] rule function [ rang-long ] partition size : 3 > table datanode size : 2, 
+      please make sure table datanode size = function partition size”则需要进行方案操作：
+      i：修改 rule.xml 文件中的“rang-long”属性值规则对应的映射文件mapFile对应的值autopartition-long.txt
+         <function name="rang-long"
+                class="io.mycat.route.function.AutoPartitionByLong">
+                <property name="mapFile">autopartition-long.txt</property>
+         </function>
+        
+      ii：修改 autopartition-long.txt 文件节点值
+         # range start-end ,data node index
+         # K=1000,M=10000.
+         0-500M=0
+         500M-1000M=1
+         #1000M-1500M=2                         //注释掉此行，修改为2个节点的配置
+         
+      iii：修改 rule.xml 文件中的mod-long规则属性
+         <function name="mod-long" class="io.mycat.route.function.PartitionByMod">
+                <!-- how many data nodes -->
+                <property name="count">2</property>         //将此处的节点数修改为2
+        </function>
+      
+      （6） 再次启动mycat服务并验证
+       [root@testserver conf]# ../bin/mycat start
+       Starting Mycat-server...
+       
+       [root@testserver conf]# lsof -i:8066                   //虚拟schema登陆端口 
+       COMMAND   PID USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME
+       java    20376 root   88u  IPv6 2075783      0t0  TCP *:8066 (LISTEN)
+       [root@testserver conf]# lsof -i:9066                   //虚拟schema管理端口 
+       COMMAND   PID USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME
+       java    20376 root   84u  IPv6 2075781      0t0  TCP *:9066 (LISTEN)
+       
+       
+  3、 测试验证
+  
+     （1）登录MyCAT管理端
+      [root@testserver conf]# mysql -uroot -p123456 -h10.10.10.10 -P 9066
+      mysql> show @@heartbeat;                           //主机心跳情况
+      +--------+-------+------------+------+---------+-------+----------+---------+--------------+---------------------+-------+
+      | NAME   | TYPE  | HOST       | PORT | RS_CODE | RETRY | STATUS   | TIMEOUT | EXECUTE_TIME | LAST_ACTIVE_TIME    | STOP  |
+      +--------+-------+------------+------+---------+-------+----------+---------+--------------+---------------------+-------+
+      | hostM1 | mysql | 10.10.10.10 | 3306 |       1 |     2 | checking |   30000 | 2,10,10      | 2018-11-01 16:29:21 | false |
+      | hostS2 | mysql | 10.10.10.11 | 3306 |      -1 |     0 | checking |   30000 | 14,12,12     | 1970-01-01 08:00:00 | false |
+      +--------+-------+------------+------+---------+-------+----------+---------+--------------+---------------------+-------+
+      2 rows in set (0.01 sec)
+      备注：RS_CODE为1表示心跳正常
+      
+      mysql> show @@datasource;                          //读写分离的机器配置情况
+      +----------+--------+-------+------------+------+------+--------+------+------+---------+-----------+------------+
+      | DATANODE | NAME   | TYPE  | HOST       | PORT | W/R  | ACTIVE | IDLE | SIZE | EXECUTE | READ_LOAD | WRITE_LOAD |
+      +----------+--------+-------+------------+------+------+--------+------+------+---------+-----------+------------+
+      | dn1      | hostM1 | mysql | 10.10.10.10 | 3306 | W    |      0 |    0 | 1000 |       0 |         0 |          0 |
+      | dn1      | hostS2 | mysql | 10.10.10.11 | 3306 | R    |      0 |    0 | 1000 |       0 |         0 |          0 |
+      | dn2      | hostM1 | mysql | 10.10.10.10 | 3306 | W    |      0 |    0 | 1000 |       0 |         0 |          0 |
+      | dn2      | hostS2 | mysql | 10.10.10.11 | 3306 | R    |      0 |    0 | 1000 |       0 |         0 |          0 |
+      +----------+--------+-------+------------+------+------+--------+------+------+---------+-----------+------------+
+      4 rows in set (0.00 sec)
+      
+     （2） 数据演示---查看数据库及表
+      [root@testserver conf]# mysql -u root -p123456 -P8066 -h10.10.10.10
+      mysql> show databases;
+      +----------+
+      | DATABASE |
+      +----------+
+      | TESTDB   |
+      +----------+
+      1 row in set (0.00 sec)
+      
+      mysql> use TESTDB;
+      Reading table information for completion of table and column names
+      You can turn off this feature to get a quicker startup with -A
+
+      Database changed
+      mysql> show tables;
+      +------------------+
+      | Tables in TESTDB |
+      +------------------+
+      | company          |
+      | customer         |
+      | customer_addr    |
+      | employee         |
+      | goods            |
+      | orders           |
+      | order_items      |
+      | travelrecord     |
+      +------------------+
+      8 rows in set (0.00 sec)
+      
+      mysql> create table employee (id int not null primary key,name varchar(100),sharding_id int not null);
+      
+      mysql> insert into employee(id,name,sharding_id) values(1,'leader us',10000);
+      mysql> insert into employee(id,name,sharding_id) values(2, 'me',10010);
+      mysql> insert into employee(id,name,sharding_id) values(3, 'mycat',10000);
+      mysql> insert into employee(id,name,sharding_id) values(4, 'mydog',10010);
+      
+      10.10.10.10库表记录：1 leader us 10000
+                          3 mycat 10000
+      10.10.10.11库表记录：2 me 10010
+                          4 mydog 10010   同时也可以通过日志查看
