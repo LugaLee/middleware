@@ -127,6 +127,8 @@
       23385:X 30 Oct 2018 18:44:51.296 # +monitor master mymaster 10.10.10.10 2222 quorum 2
       23385:X 30 Oct 2018 18:44:51.297 * +slave slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
       23385:X 30 Oct 2018 18:44:51.326 * +slave slave 12.12.12.12:2222 12.12.12.12 2222 @ mymaster 10.10.10.10 2222
+      23385:X 30 Oct 2018 18:58:08.200 * +sentinel sentinel 2de562513d7f6923704dd231ca1be1a1370f77c4 12.12.12.12 22222 @ mymaster 10.10.10.10 2222
+      23385:X 01 Nov 2018 09:47:34.352 * +sentinel sentinel f894a10fb3da379d584801dd94ec8e9abfee869c 11.11.11.11 22222 @ mymaster 10.10.10.10 2222
       
      （3）Replica从主机（IP为11.11.11.11及12.12.12.12）哨兵配置
       bind 11.11.11.11/12.12.12.12
@@ -159,5 +161,98 @@
       8532:X 30 Oct 2018 19:19:34.780 * +slave slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
       8532:X 30 Oct 2018 19:19:34.828 * +slave slave 12.12.12.12:2222 12.12.12.12 2222 @ mymaster 10.10.10.10 2222
       8532:X 30 Oct 2018 19:19:35.857 * +sentinel sentinel e36ae36386f876bf7845896fa7f47c666b4f2bb2 10.10.10.10 22222 @ mymaster 10.10.10.10 2222
+      8532:X 01 Nov 2018 10:09:03.096 * +sentinel sentinel f894a10fb3da379d584801dd94ec8e9abfee869c 11.11.11.11 22222 @ mymaster 10.10.10.10 2222
       
+      [root@XWF-MKZ:/usr/local/redis-5.0.0]# src/redis-sentinel ../redis-5.0.0/sentinel.conf 
+      [root@XWF-MKZ:/usr/local/redis-5.0.0]# ps -ef|grep redis
+      root      1472     1  0 09:44 ?        00:00:00 src/redis-sentinel 10.1.22.7:22222 [sentinel]  
+      root      1574 24530  0 09:44 pts/0    00:00:00 grep --color=auto redis
+      root     32484     1  0 Oct30 ?        00:06:17 /usr/local/redis-5.0.0/src/redis-server 10.1.22.7:2222
+      [root@XWF-MKZ:/usr/local/redis-5.0.0]# tail -f /usr/local/redis-5.0.0/logs/redis--sentinel-2222.log 
+      1471:X 01 Nov 2018 09:44:35.790 # Configuration loaded
+      1472:X 01 Nov 2018 09:44:35.793 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+      1472:X 01 Nov 2018 09:44:35.794 * Running mode=sentinel, port=22222.
+      1472:X 01 Nov 2018 09:44:35.794 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+      1472:X 01 Nov 2018 09:44:35.855 # Sentinel ID is f894a10fb3da379d584801dd94ec8e9abfee869c
+      1472:X 01 Nov 2018 09:44:35.855 # +monitor master mymaster 10.10.10.10 2222 quorum 2
+      1472:X 01 Nov 2018 09:44:35.857 * +slave slave 12.12.12.12:2222 12.12.12.12 2222 @ mymaster 10.10.10.10 2222
+      1472:X 01 Nov 2018 09:44:35.883 * +slave slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
+      1472:X 01 Nov 2018 09:44:36.004 * +sentinel sentinel e36ae36386f876bf7845896fa7f47c666b4f2bb2 10.10.10.10 22222 @ mymaster 10.10.10.10 2222
+      1472:X 01 Nov 2018 09:44:36.177 * +sentinel sentinel 2de562513d7f6923704dd231ca1be1a1370f77c4 12.12.12.12 22222 @ mymaster 10.10.10.10 2222
+ 
+ 
  6、 哨兵高可用验证
+ 
+      （1） Kill Master进程（10.10.10.10 redis.conf）
+       [root@XWF-BorgenCouchbase01:/home/ubuntu]# kill -9 18558
+       
+      （2） 查看日志-Master服务（三台redis server sentinel日志均可）
+       [root@XWF-BorgenCouchbase01:/usr/local/redis-5.0.0/logs]# tail -f redis--sentinel-2222.log
+       23384:X 30 Oct 2018 18:44:51.252 # Configuration loaded
+       23385:X 30 Oct 2018 18:44:51.253 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+       23385:X 30 Oct 2018 18:44:51.254 * Running mode=sentinel, port=22222.
+       23385:X 30 Oct 2018 18:44:51.254 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+       23385:X 30 Oct 2018 18:44:51.296 # Sentinel ID is e36ae36386f876bf7845896fa7f47c666b4f2bb2
+       23385:X 30 Oct 2018 18:44:51.296 # +monitor master mymaster 10.10.10.10 2222 quorum 2
+       23385:X 30 Oct 2018 18:44:51.297 * +slave slave 12.12.12.12:2222 12.12.12.12.2222 @ mymaster 10.10.10.10 2222
+       23385:X 30 Oct 2018 18:44:51.326 * +slave slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
+       23385:X 30 Oct 2018 18:58:08.200 * +sentinel sentinel 2de562513d7f6923704dd231ca1be1a1370f77c4 12.12.12.12.22222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 09:47:34.352 * +sentinel sentinel f894a10fb3da379d584801dd94ec8e9abfee869c 11.11.11.11 22222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:03.563 # +sdown master mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:03.634 # +odown master mymaster 10.10.10.10 2222 #quorum 3/2
+       23385:X 01 Nov 2018 10:01:03.634 # +new-epoch 1
+       23385:X 01 Nov 2018 10:01:03.634 # +try-failover master mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:03.666 # +vote-for-leader e36ae36386f876bf7845896fa7f47c666b4f2bb2 1
+       23385:X 01 Nov 2018 10:01:03.678 # f894a10fb3da379d584801dd94ec8e9abfee869c voted for f894a10fb3da379d584801dd94ec8e9abfee869c 1
+       23385:X 01 Nov 2018 10:01:03.798 # 2de562513d7f6923704dd231ca1be1a1370f77c4 voted for e36ae36386f876bf7845896fa7f47c666b4f2bb2 1
+       23385:X 01 Nov 2018 10:01:03.878 # +elected-leader master mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:03.878 # +failover-state-select-slave master mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:03.970 # +selected-slave slave 12.12.12.12:2222 12.12.12.12.2222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:03.970 * +failover-state-send-slaveof-noone slave 12.12.12.12:2222 12.12.12.12.2222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.053 * +failover-state-wait-promotion slave 12.12.12.12:2222 12.12.12.12.2222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.225 # +promoted-slave slave 12.12.12.12:2222 12.12.12.12.2222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.225 # +failover-state-reconf-slaves master mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.258 * +slave-reconf-sent slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.607 * +slave-reconf-inprog slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.607 * +slave-reconf-done slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.673 # +failover-end master mymaster 10.10.10.10 2222
+       23385:X 01 Nov 2018 10:01:04.674 # +switch-master mymaster 10.10.10.10 2222 12.12.12.12.2222
+       23385:X 01 Nov 2018 10:01:04.674 * +slave slave 11.11.11.11:2222 11.11.11.11 2222 @ mymaster 12.12.12.12.2222
+       23385:X 01 Nov 2018 10:01:04.674 * +slave slave 10.10.10.10:2222 10.10.10.10 2222 @ mymaster 12.12.12.12.2222
+       23385:X 01 Nov 2018 10:01:34.717 # +sdown slave 10.10.10.10:2222 10.10.10.10 2222 @ mymaster 12.12.12.12.2222
+       
+      （3） 查看哨兵节点状态-Master服务
+       [root@XWF-BorgenCouchbase01:/usr/local/redis-5.0.0/src]# ./redis-cli -h 10.10.10.10 -p 22222 info sentinel 
+       # Sentinel
+       sentinel_masters:1
+       sentinel_tilt:0
+       sentinel_running_scripts:0
+       sentinel_scripts_queue_length:0
+       sentinel_simulate_failure_flags:0
+       master0:name=mymaster,status=ok,address=12.12.12.12:2222,slaves=2,sentinels=3
+       即，主服务切换至12.12.12.12。哨兵节点认为新的主节点仍然有2个从节点，这是因为哨兵在将12切换成主节点的同时，将10节点置为其从节点；虽然10从节点已经挂掉，但是由于哨兵并不会对从
+       节点进行客观下线（其含义将在原理部分介绍），因此认为该从节点一直存在。当10节点重新启动后，会自动变成12节点的从节点。
+       
+       经过一段时间，在12.12.12.12 服务器上查看各节点状态，如下：
+       [root@testserver src]# ./redis-cli -h 12.12.12.12 -p 2222 -a 'requirepass@fuck-id.com!!!' info Replication
+       Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+       # Replication
+       role:master
+       connected_slaves:1                        //此时，仅显示11从节点
+       slave0:ip=11.11.11.11,port=2222,state=online,offset=18940178,lag=1
+       master_replid:b26cdea7d958b09dcf1cc473e000de42fd35d3ed
+       master_replid2:017bda680e2d138dc56185299801e3da1fccb11f
+       master_repl_offset:18940313
+       second_repl_offset:18716147
+       repl_backlog_active:1
+       repl_backlog_size:1048576
+       repl_backlog_first_byte_offset:17891738
+       repl_backlog_histlen:1048576
+
+
+7、  哨兵模式总结：
+
+     （1） 哨兵系统中的主从节点，与普通的主从节点一致，故障发现和转移是由哨兵来控制和完成
+     （2） 哨兵节点本质上是redis节点，只需要配置监控主节点，便可以自动发现其他的哨兵节点和从节点
+     （3） 在哨兵节点启动和故障转移阶段，各个节点的配置文件会被重写(config rewrite)
+     （4） 一个哨兵可以监控多个主节点，通过配置多条sentinel monitor即可
