@@ -1,0 +1,68 @@
+
+                                                Nginx 获取自定义 Header 参数
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+环境描述
+
+    [root@testserver1:/home/ubuntu]# lsb_release -a 
+    LSB Version:    core-2.0-amd64:core-2.0-noarch:core-3.0-amd64:core-3.0-noarch:core-3.1-amd64:core-3.1-noarch:core-3.2-amd64:core-3.2-noarch:core-4.0-amd64:core-4.0-noarch:core-4.1-amd64:core-4.1-noarch:security-4.0-amd64:security-4.0-noarch:security-4.1-amd64:security-4.1-noarch
+    Distributor ID: Ubuntu
+    Description:    Ubuntu 14.04.5 LTS
+    Release:        14.04
+    Codename:       trusty
+    
+    [root@testserver1:/home/ubuntu]# nginx -v
+    nginx version: openresty/1.11.2.3
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+1、 在fastcgi.conf中定义所用到的参数
+
+    [root@testserver1:/home/ubuntu/openresty-1.11.2.3/build/nginx-1.11.2/conf]# vi fastcgi.conf
+
+    fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+    fastcgi_param  QUERY_STRING       $query_string;
+    fastcgi_param  REQUEST_METHOD     $request_method;
+    fastcgi_param  CONTENT_TYPE       $content_type;
+    fastcgi_param  CONTENT_LENGTH     $content_length;
+    ... ...
+
+    fastcgi_param  HTTP_USERNAME      $http_username;     //此处需要增加USERNAME参数，例如访问的用户名或者参数名
+    fastcgi_param  HTTP_APP_NAME      $http_app_name;     //此处需要增加APP_NAME参数，例如访问的应用程序名称或参数
+    
+    
+    
+2、 在对应的nginx.conf文件中定义，本例在/etc/nginx/conf.d/dev/目录对应的文件devcom.conf中定义
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" "$uri" '
+                  '$status $body_bytes_sent "$http_referer" '
+                  '"$http_user_agent" "$http_x_forwarded_for" "$http_app_name" ';
+                  
+    "$http_app_name" 指定了需要访问的Header中的参数信息
+                  
+    access_log  /var/log/nginx/access.log  main;
+    
+    
+3、 重启nginx服务
+
+    [root@testserver1:/etc/nginx/conf.d/dev]# service nginx restart  
+    
+    
+4、 测试验证
+
+    在Swagger中的Api key authorization处定义所要获取的Header参数相关信息，如下：
+    name: app-name
+    in: header
+    value: 11111111111111111111111111
+    
+    [root@testserver1:/etc/nginx/conf.d/dev]# tail -f /var/log/nginx/access.log
+    
+    203.156.217.242 - - [26/Nov/2018:16:07:31 +0800] "GET /v2/api-docs?group=AUTH_API HTTP/1.1" "/v2/api-docs" 200 5846 
+    "http://devcom.xwf-id.com/swagger-ui.html" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, 
+    like Gecko) Chrome/70.0.3538.77 Safari/537.36" "-" "11111111111111111111111111" 
+    此纪录后面的2列分别打印 Header信息头中的$http_username、$http_app_name参数值
+    
+    实际打印情况：
+    203.156.217.242 - - [26/Nov/2018:16:07:31 +0800] "GET /v2/api-docs?group=AUTH_API HTTP/1.1" "/v2/api-docs" 200 5846 
+    "http://devcom.xwf-id.com/swagger-ui.html" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, 
+    like Gecko) Chrome/70.0.3538.77 Safari/537.36" "-" "mini wechat"
