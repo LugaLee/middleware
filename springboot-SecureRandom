@@ -1,0 +1,50 @@
+                                SpringBoot项目中SecureRandom导致的Controller访问非常慢
+                                
+                                
+OS: CentOS Linux release 7.3.1611 (Core)
+JDK:
+    java version "1.8.0_112"
+    Java(TM) SE Runtime Environment (build 25.112-b15)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.112-b15,mixed mode)
+
+
+[StackOverflow上Dan Dyer的回答]：
+
+On Linux, the default implementation for SecureRandom is NativePRNG (source code here), which tends to be very slow. On Windows, the default is SHA1PRNG, which as others pointed out you can also use on Linux if you specify it explicitly.
+
+NativePRNG differs from SHA1PRNG and Uncommons Maths' AESCounterRNG in that it continuously receives entropy from the operating system (by reading from /dev/urandom). The other PRNGs do not acquire any additional entropy after seeding.
+
+AESCounterRNG is about 10x faster than SHA1PRNG, which IIRC is itself two or three times faster than NativePRNG.
+
+If you need a faster PRNG that acquires entropy after initialization, see if you can find a Java implementation of Fortuna. The core PRNG of a Fortuna implementation is identical to that used by AESCounterRNG, but there is also a sophisticated system of entropy pooling and automatic reseeding.
+
+
+[大致译文]：
+
+linux默认的SecureRandom实现方式是非常慢的NativePRNG，而在Windows上的默认实现是SHA1PRNG，正如其他人所说，你也可以在Linux上指定使用该方式。
+
+……NativePRNG会不断从操作系统获取熵（从/dev/urandom读取），其它PRNG则不会获取这些额外的熵。
+
+AESCounterRNG差不多比SHA1PRNG快的十倍，而如果我没记错，SHA1PRNG比NativePRNG快两到三倍
+
+结合其它资料，终于弄明白了，SecureRandom是java用来获取高级随机数的实现，++而巨慢则是由在linux上默认使用的实现方式导致的++。
+
+
+
+[解决方案]：
+
+Linux上Jre中默认SecureRandom读取熵时会从/dev/urandom中读取，而从这里读取熵是阻塞的，下面是已知的两种解决方式:
+
+1、 修改jre配置文件
+
+    以linux用yum安装的jre为例，打开/usr/lib/jvm/jre/lib/security/java.security，
+
+    找到securerandom.source=file:/dev/random这一行，
+
+    将file:/dev/random（阻塞熵源）修改为file:/dev/./urandom（非阻塞熵源）
+
+
+2、 配置JVM启动参数
+
+    -Djava.security.egd=file:/dev/./urandom
+    Thanks To: How to solve slow Java SecureRandom? - StackOverflow
