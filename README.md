@@ -11,3 +11,6 @@
 * [技术文章]Redis5.0.0高可用哨兵模式环境搭建与部署
 * [技术文章]MyCAT数据库中间件双节点部署搭建
 * [技术文章]Nginx获取自定义Header参数值
+* [技术文章]Couchbase集群迁移之CBBACK&&CBRESTORE命令
+* [技术文章]Couchbase集群迁移之CBTRANSFER命令
+* [技术文章]Couchbase集群迁移之ADMIN CONSOLE操作
