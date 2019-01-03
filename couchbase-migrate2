@@ -1,0 +1,58 @@
+-----------------------------------------------------------------------------------------------------------------------------
+
+---环境描述：CentOS release 6.7 (Final)
+
+---源主机IP：10.10.10.10（此处真实地址已xx）
+
+---目标主机IP：11.11.11.11（此处真实地址已xx）
+
+---应用服务：couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm版本
+                                           
+-----------------------------------------------------------------------------------------------------------------------------
+                                分布式数据库Couchbase 集群迁移方案之CBTRANSFER
+
+CBTRANSFER:Transfers data between clusters or from files
+
+  操作命令方式：
+  cbtransfer [options] source destination
+
+  [root@testserver bin]# ./cbtransfer -u Administrator -p password http://10.10.10.10:8091 http://11.11.11.11:8091 -b xwf_main --bucket-destination xwf_main
+  //  http://10.10.10.10:8091 参数为源主机
+  //  http://11.11.11.11:8091 参数为目标主机
+  //  -b 参数为源主机对应的bucket信息
+  //  --bucket-destination 参数为目标主机对应的bucket信息
+  .
+  bucket: xwf_main, msgs transferred...
+          :                total |       last |    per sec
+    byte  :                    0 |          0 |        0.0
+    done
+
+  [root@testserver bin]# ./cbtransfer -v -u Administrator -p password http:/10.10.10.10:8091 http://11.11.11.11:8091 -b xwf_main --bucket-destination xwf_main
+  2016-01-03 14:55:17,477: mt cbtransfer...
+  2016-01-03 14:55:17,478: mt  source : http://10.10.10.10:8091
+  2016-01-03 14:55:17,478: mt  sink   : http://11.11.11.11:8091
+  2016-01-03 14:55:17,478: mt  opts   : {'username': '<xxx>', 'destination_vbucket_state': 'active', 'verbose': 1, 'extra': {'max_retry': 10.0, 'rehash': 0.0,
+  'dcp_consumer_queue_length': 1000.0, 'data_only': 0.0, 'uncompress': 0.0, 'nmv_retry': 1.0, 'conflict_resolve': 1.0, 'cbb_max_mb': 100000.0, 'report': 5.0, 
+  'mcd_compatible': 1.0, 'try_xwm': 1.0, 'backoff_cap': 10.0, 'batch_max_bytes': 400000.0, 'report_full': 2000.0, 'flow_control': 1.0, 'batch_max_size': 1000.0,
+  'seqno': 0.0, 'design_doc_only': 0.0, 'allow_recovery_vb_remap': 0.0, 'recv_min_bytes': 4096.0}, 'collection': None, 'ssl': False, 'threads': 4, 'key': None,
+  'password': '<xxx>', 'id': None, 'destination_operation': None, 'source_vbucket_state': 'active', 'silent': False, 'dry_run': False, 'single_node': False, 
+  'bucket_destination': 'xwf_main', 'vbucket_list': None, 'separator': '::', 'bucket_source': 'xwf_main'}
+  2016-01-03 14:55:17,492: mt Starting new HTTP connection (1): 10.10.10.10
+  2016-01-03 14:55:17,604: mt Starting new HTTP connection (1): 11.11.11.11
+  2016-01-03 14:55:17,697: mt bucket: xwf_main
+  2016-01-03 14:55:17,940: w0   source : http://10.10.10.10:8091(xwf_main@10.10.10.10:8091)
+  2016-01-03 14:55:17,940: w0   sink   : http://11.11.11.11:8091(xwf_main@10.10.10.10:8091)
+  2016-01-03 14:55:17,941: w0          :                total |       last |    per sec
+  .
+  bucket: xwf_main, msgs transferred...
+          :                total |       last |    per sec
+    batch :                    0 |          0 |        0.0
+    byte  :                    0 |          0 |        0.0
+    msg   :                    0 |          0 |        0.0
+  2016-01-03 14:55:17,998: mt Starting new HTTP connection (1): 10.10.10.10
+  2016-01-03 14:55:18,003: mt Starting new HTTP connection (1): 10.10.10.10
+  2016-01-03 14:55:18,054: mt Starting new HTTP connection (1): 11.11.11.11
+  2016-01-03 14:55:18,061: mt Starting new HTTP connection (1): 11.11.11.11
+  2016-01-03 14:55:18,103: mt Starting new HTTP connection (1): 10.10.10.10
+  2016-01-03 14:55:18,110: mt Starting new HTTP connection (1): 10.10.10.10
+  done
