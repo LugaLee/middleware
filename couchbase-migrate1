@@ -1,0 +1,132 @@
+-----------------------------------------------------------------------------------------------------------------------------
+---环境描述：CentOS release 6.7 (Final)
+
+---主机IP：10.10.10.10（此处真实地址已xx）
+
+---应用服务：couchbase-server-enterprise-5.5.2-centos6.x86_64.rpm版本
+
+                                        
+                                            分布式数据库Couchbase 集群迁移方案之CBBACK/CBRESTORE
+
+-----------------------------------------------------------------------------------------------------------------------------
+
+##  1、CBBACK
+
+    命令行操作方式：cbbackup [options] [source] [backup-dir] -u [admin] -p [password]
+
+    [root@testserver bin]# ./cbbackup -m full http://10.10.10.10:8091 /home/ubuntu/ -u Administrator -p password 
+    //-m full参数表明：执行全集群节点备份操作，基于-m参数：full、diff及accu
+    .
+    bucket: did_devices, msgs transferred...
+           :                total |       last |    per sec
+     byte  :                    0 |          0 |        0.0
+    .
+    bucket: xwf_events, msgs transferred...
+           :                total |       last |    per sec
+     byte  :                    0 |          0 |        0.0
+    .
+    bucket: xwf_main, msgs transferred...
+           :                total |       last |    per sec
+     byte  :                    0 |          0 |        0.0
+    done
+    
+    [root@testserver bin]# ./cbbackup -m full --single-node -t 3 http://10.10.10.10:8091 /home/ubuntu/ -u Administrator -p password 
+    //--single-node 参数表明：执行单节点的备份操作
+    //-t 3参数表明：当前执行备份的线程个数为3
+    .
+    bucket: did_devices, msgs transferred...
+           :                total |       last |    per sec
+     byte  :                    0 |          0 |        0.0
+    .
+    bucket: xwf_events, msgs transferred...
+           :                total |       last |    per sec
+     byte  :                    0 |          0 |        0.0
+    .
+    bucket: xwf_main, msgs transferred...
+           :                total |       last |    per sec
+     byte  :                    0 |          0 |        0.0
+    done
+    
+    [root@testserver bin]# ./cbbackup -m full -v http://10.10.10.10:8091 /home/ubuntu/ -u Administrator -p password   
+    //-v参数表明：执行过程中相关log的输出
+    2016-01-03 11:10:39,380: mt cbbackup...
+    2016-01-03 11:10:39,380: mt  source : http://10.10.10.10:8091
+    2016-01-03 11:10:39,380: mt  sink   : /home/ubuntu/
+    2016-01-03 11:10:39,380: mt  opts   : {'username': '<xxx>', 'verbose': 1, 'extra': {'max_retry': 10.0, 'rehash': 0.0, 
+    'dcp_consumer_queue_length': 1000.0, 'data_only': 0.0, 'uncompress': 0.0, 'nmv_retry': 1.0, 'conflict_resolve': 1.0, 
+    'cbb_max_mb': 100000.0, 'report': 5.0, 'mcd_compatible': 1.0, 'try_xwm': 1.0, 'backoff_cap': 10.0, 'batch_max_bytes':
+    400000.0, 'report_full': 2000.0, 'flow_control': 1.0, 'batch_max_size': 1000.0, 'seqno': 0.0, 'design_doc_only': 0.0,
+    'allow_recovery_vb_remap': 0.0, 'recv_min_bytes': 4096.0}, 'collection': None, 'ssl': False, 'threads': 4, 'key': None,
+    'password': '<xxx>', 'id': None, 'bucket_source': None, 'silent': False, 'dry_run': False, 'single_node': False, 
+    'vbucket_list': None, 'separator': '::', 'mode': 'full'}
+    2016-01-03 11:10:39,393: mt Starting new HTTP connection (1): 10.10.10.10
+    2016-01-03 11:10:39,500: mt bucket: did_devices
+    2016-01-03 11:10:39,818: w0   source : http://10.10.10.10:8091(did_devices@10.10.10.10:8091)
+    2016-01-03 11:10:39,818: w0   sink   : /home/ubuntu/(did_devices@10.10.10.10:8091)
+    2016-01-03 11:10:39,819: w0          :                total |       last |    per sec
+    .
+    bucket: did_devices, msgs transferred...
+            :                total |       last |    per sec
+      batch :                    0 |          0 |        0.0
+      byte  :                    0 |          0 |        0.0
+      msg   :                    0 |          0 |        0.0
+    2016-01-03 11:10:39,902: mt Starting new HTTP connection (1): 10.10.10.10
+    2016-01-03 11:10:39,907: mt Starting new HTTP connection (1): 10.10.10.10
+    2016-01-03 11:10:39,962: mt Starting new HTTP connection (1): 10.10.10.10
+    2016-01-03 11:10:39,968: mt Starting new HTTP connection (1): 10.10.10.10
+    2016-01-03 11:10:39,973: mt bucket: xwf_events
+    2016-01-03 11:10:40,252: w1   source : http://10.10.10.10:8091(xwf_events@10.10.10.10:8091)
+    2016-01-03 11:10:40,252: w1   sink   : /home/ubuntu/(xwf_events@10.10.10.10:8091)
+    2016-01-03 11:10:40,252: w1          :                total |       last |    per sec
+    .
+    bucket: xwf_events, msgs transferred...
+            :                total |       last |    per sec
+      batch :                    0 |          0 |        0.0
+      byte  :                    0 |          0 |        0.0
+      msg   :                    0 |          0 |        0.0
+    .
+    ... ...
+    done
+
+ ##  2、CBRESTORE
+ 
+     命令操作方式：cbrestore [options] [backup-dir] [destination]
+     
+     [root@testserver bin]# ./cbrestore -b xwf_events -B xwf_events --from-date=2017-08-01 --to-date=2018-08-01 -t 3 /home/ubuntu/ http://11.11.11.11:8091 -u Administrator -p password 
+     .
+     bucket: xwf_events, msgs transferred...
+            :                total |       last |    per sec
+      byte  :                    0 |          0 |        0.0
+     done
+     
+     [root@testserver bin]# ./cbrestore -b xwf_events -B xwf_events --from-date=2017-08-01 --to-date=2018-08-01 -t 3 -v /home/ubuntu/ http://11.11.11.11:8091 -u Administrator -p password
+     // -b 参数表明源buckets名称，即source_bucket
+     // -B 参数表明目标buckets名称，即destiant_bucket
+     // --from-date 参数表明从具体的某一日开始
+     // --to-date 参数表明截止到具体的某一日
+      2019-01-03 11:46:39,408: mt cbrestore...
+      2019-01-03 11:46:39,408: mt  source : /home/ubuntu/
+      2019-01-03 11:46:39,408: mt  sink   : http://11.11.11.11:8091
+      2019-01-03 11:46:39,408: mt  opts   : {'username': '<xxx>', 'verbose': 1, 'extra': {'max_retry': 10.0, 'rehash': 0.0, 'dcp_consumer_queue_length': 1000.0, 'data_only': 0.0, 
+      'uncompress': 0.0, 'nmv_retry': 1.0, 'conflict_resolve': 1.0, 'cbb_max_mb': 100000.0, 'report': 5.0, 'mcd_compatible': 1.0, 'try_xwm': 1.0, 'backoff_cap': 10.0, 'batch_max_bytes':
+      400000.0, 'report_full': 2000.0, 'flow_control': 1.0, 'batch_max_size': 1000.0, 'seqno': 0.0, 'design_doc_only': 0.0, 'allow_recovery_vb_remap': 0.0, 'recv_min_bytes': 4096.0},
+      'collection': None, 'ssl': False, 'threads': 3, 'to_date': '2018-08-01', 'key': None, 'password': '<xxx>', 'id': None, 'bucket_source': 'xwf_events', 'silent': False, 'dry_run':
+      False, 'from_date': '2017-08-01', 'bucket_destination': 'xwf_events', 'add': False, 'vbucket_list': None, 'separator': '::'}
+      2019-01-03 11:46:39,423: mt Starting new HTTP connection (1): 11.11.11.11
+      2019-01-03 11:46:39,522: mt bucket: xwf_events
+      2019-01-03 11:46:39,543: w0   source : /home/ubuntu/(xwf_events@11.11.11.11:8091)
+      2019-01-03 11:46:39,544: w0   sink   : http://11.11.11.11:8091(xwf_events@11.11.11.11:8091)
+      2019-01-03 11:46:39,544: w0          :                total |       last |    per sec
+      2019-01-03 11:46:39,544: w0    batch :                    1 |          1 |       54.1
+      2019-01-03 11:46:39,544: w0    byte  :                    0 |          0 |        0.0
+      2019-01-03 11:46:39,544: w0    msg   :                    0 |          0 |        0.0
+      .
+      bucket: xwf_events, msgs transferred...
+              :                total |       last |    per sec
+        batch :                    1 |          1 |       14.3
+        byte  :                    0 |          0 |        0.0
+        msg   :                    0 |          0 |        0.0
+      2019-01-03 11:46:39,595: mt Starting new HTTP connection (1): 11.11.11.11
+      2019-01-03 11:46:39,602: mt Starting new HTTP connection (1): 11.11.11.11
+      done
+     
