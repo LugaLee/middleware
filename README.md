@@ -1,16 +1,16 @@
 # Middleware
-------------------------------------------------------------------------------------------------------------------------------------------
-# 有关middleware相关技术文章
+-------------------------------------------------- -------------------------------------------------- --------------------------------------
+# Technical articles about middleware
 
-* [技术文章]常见数据库对比分析
-* [技术文章]PostgreSql常见问题汇总
-* [技术文章]进程与内存关系
-* [技术文章]Redis5.0.0集群环境搭建与部署
-* [技术文章]Couchbase5.5.2集群环境搭建与部署
-* [技术文章]Mysql5.6主从复制环境搭建与部署
-* [技术文章]Redis5.0.0高可用哨兵模式环境搭建与部署
-* [技术文章]MyCAT数据库中间件双节点部署搭建
-* [技术文章]Nginx获取自定义Header参数值
-* [技术文章]Couchbase集群迁移之CBBACK&&CBRESTORE命令
-* [技术文章]Couchbase集群迁移之CBTRANSFER命令
-* [技术文章]Couchbase集群迁移之ADMIN CONSOLE操作
+* [Technical article] Comparative analysis of common databases
+* [Technical article] PostgreSql FAQ summary
+* [Technical article] Process and memory relationship
+* [Technical article] Redis5.0.0 cluster environment construction and deployment
+* [Technical article] Couchbase5.5.2 cluster environment construction and deployment
+* [Technical article] Mysql5.6 master-slave replication environment construction and deployment
+* [Technical Article] Redis5.0.0 High Availability Sentinel Mode Environment Construction and Deployment
+* [Technical article] MyCAT database middleware dual-node deployment and construction
+* [Technical article] Nginx gets custom Header parameter value
+* [Technical article] CBBACK&&CBRESTORE command for Couchbase cluster migration
+* [Technical article] CBTRANSFER command for Couchbase cluster migration
+* [Technical article] ADMIN CONSOLE operation of Couchbase cluster migration
